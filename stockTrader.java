@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 public class stockTrader{
 	public static void main(String[] arg) throws FileNotFoundException{
-		Scanner in = new Scanner(new File("tiny.txt"));
+		Scanner in = new Scanner(new File("sp500_1990_2025.txt"));
 		String symbol=in.next();
 		int n = in.nextInt();
 		int[] years=new int[n];
@@ -53,7 +53,35 @@ public class stockTrader{
 	
 	public static String decide(double[] history, boolean holding, double boughtAt){
 		//return buyAndHold(history, holding, boughtAt); 
-		return dipBuyer(history, holding, boughtAt);
+		if(history.length<7)return dipBuyer(history, holding, boughtAt);
+		//return movingAverage(history, holding, boughtAt);
+		return randomBsGo(history, holding, boughtAt);
+	}
+	
+	public static String randomBsGo(double[] history, boolean holding, double boughtAt){
+		double avg=0;
+		int n=history.length-1;
+		double percentGain=0;
+		int avgStart=10;
+		if(boughtAt>0)percentGain=(history[n]-boughtAt)/boughtAt*100;
+		if(n<=avgStart-1) return "HOLD";
+		if(percentGain<=-8)return "HOLD";
+		for(int i=n-avgStart;i<n;i++)avg+=history[i];
+		avg=avg/avgStart;
+		if(history[n]>avg*1.01)return "BUY";
+		if(history[n]<avg && percentGain>=10)return "SELL";
+		return "HOLD";
+	}
+	
+	public static String movingAverage(double[] history, boolean holding, double boughtAt){
+		double avg=0;
+		int n=history.length-1;
+		if(n<=10) return "HOLD";
+		for(int i=n-11;i<n;i++)avg+=history[i];
+		avg=avg/12;
+		if(history[n]<avg)return "BUY";
+		if(history[n]>avg)return "SELL";
+		return "HOLD";
 	}
 	
 	public static String buyAndHold(double[] history, boolean holding, double boughtAt){
@@ -61,15 +89,12 @@ public class stockTrader{
 	}
 	
 	public static String dipBuyer(double[] history, boolean holding, double boughtAt){
+		double percentGain=0;
+		int n=history.length-1;
 		if(history.length<=2) return "HOLD";
-		System.out.println(boughtAt);
-		for(int i=2;i<history.length;i++){
-			if((history[i]-boughtAt)/boughtAt*100>=10 && holding)return "SELL";
-			if(history[i-2]>history[i-1] && history[i-1]>history[i]){
-				boughtAt=history[i];
-				return "BUY";
-			}
-		}
+		if(boughtAt>0)percentGain=(history[n]-boughtAt)/boughtAt*100;
+		if(percentGain>=15)return "SELL";
+		if(history[n-2]>history[n-1] && history[n-1]>history[n])return "BUY";
 		return "HOLD";
 	}
 	
@@ -122,7 +147,7 @@ public class stockTrader{
 	public static String monthName(int n){
 		String[] months={"Jan","Feb","Mar","Apr","May","Jun",
 						"Jul","Aug","Sep","Oct","Nov","Dec"};
-		return months[n%12];
+		return months[n-1%12];
 	}
 	
 	public static void printData(String symbol,int[] years, int[] months, double[] prices){
